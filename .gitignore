@@ -1,0 +1,9 @@
+/settings/*.bat
+/settings/*.ps1
+/settings/*.xcl
+/settings/*.dbgdt
+/settings/*.dnx
+/*.dep
+/*.ewp
+/*.ewt
+/Debug/Obj
