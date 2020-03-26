@@ -13,6 +13,9 @@ extern "C" {
 flag Rocket_BER_Encode(const Rocket* pVal, ByteStream* pByteStrm, int* pErrCode);
 flag Rocket_BER_Decode(Rocket* pVal, ByteStream* pByteStrm, int* pErrCode);
     
+flag Armory_BER_Encode(const Armory* pVal, ByteStream* pByteStrm, int* pErrCode);
+flag Armory_BER_Decode(Armory* pVal, ByteStream* pByteStrm, int* pErrCode);
+
 #ifdef  __cplusplus
 }
 #endif

@@ -18,11 +18,11 @@ flag BerEncodeLengthEnd(ByteStream* pByteStrm, int *pErrCode);
 flag BerDecodeLength(ByteStream* pByteStrm, int* value, int *pErrCode);
 flag BerDecodeTwoZeroes(ByteStream* pByteStrm, int *pErrCode);
 
-flag BerEncodeByte(ByteStream* pByteStrm, BerTag tag, byte value, int *pErrCode);
-flag BerDecodeByte(ByteStream* pByteStrm, BerTag tag, byte *value, int *pErrCode);
+/*flag BerEncodeByte(ByteStream* pByteStrm, BerTag tag, byte value, int *pErrCode);
+flag BerDecodeByte(ByteStream* pByteStrm, BerTag tag, byte *value, int *pErrCode);*/
 
-flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, asn1SccSint value, int *pErrCode);
-flag BerDecodeInteger(ByteStream* pByteStrm, BerTag tag, asn1SccSint *value, int *pErrCode);
+flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, uint64_t value, int *pErrCode);
+flag BerDecodeInteger(ByteStream* pByteStrm, BerTag tag, void *value, int *pErrCode);
 
 flag BerEncodeBoolean(ByteStream* pByteStrm, BerTag tag, flag value, int *pErrCode);
 flag BerDecodeBoolean(ByteStream* pByteStrm, BerTag tag, flag *value, int *pErrCode);

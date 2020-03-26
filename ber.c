@@ -230,53 +230,7 @@ flag BerDecodeTwoZeroes(ByteStream* pByteStrm, int *pErrCode) {
     return TRUE;
 }
 
-flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, asn1SccSint value, int *pErrCode) {
-    byte length = 0;
-    asn1SccUint v;
-
-    if (!BerEncodeTag(pByteStrm, tag, pErrCode)) 
-        return FALSE;
-    
-    length = (byte)GetLengthInBytesOfSInt(value);
-    
-    if (!ByteStream_PutByte(pByteStrm, length)) {
-        *pErrCode = ERR_INSUFFICIENT_DATA;
-        return FALSE;
-    }
-
-    v = int2uint(value);
-
-
-    return BerEncodeUInt2(pByteStrm, v, length, pErrCode);
-}
-
-flag BerDecodeInteger(ByteStream* pByteStrm, BerTag tag, asn1SccSint *value, int *pErrCode) {
-
-    int length = 0;
-    int i;
-    asn1SccUint ret=0;
-    
-    if (!BerDecodeTag(pByteStrm, tag, pErrCode)) 
-        return FALSE;
-    if (!BerDecodeLength(pByteStrm, &length, pErrCode))
-        return FALSE;
-    
-    for(i=0; i<length; i++) {
-        byte curByte;
-
-        if (!ByteStream_GetByte(pByteStrm, &curByte)) {
-            *pErrCode = ERR_INSUFFICIENT_DATA;
-            return FALSE;
-        }
-        ret <<= 8;
-        ret |= curByte;
-    }
-    
-    *value = uint2int(ret, length);
-    return TRUE;
-}
-
-flag BerDecodeByte(ByteStream* pByteStrm, BerTag tag, byte *value, int *pErrCode) {
+/*flag BerDecodeByte(ByteStream* pByteStrm, BerTag tag, byte *value, int *pErrCode) {
 
     int length;
     byte ret=0;
@@ -306,6 +260,56 @@ flag BerEncodeByte(ByteStream* pByteStrm, BerTag tag, byte value, int *pErrCode)
     }
 
     return BerEncodeUInt2(pByteStrm, (asn1SccUint)value, 1, pErrCode);
+}*/
+
+flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, uint64_t value, int *pErrCode) {
+    byte length = 0;
+    asn1SccUint v;
+
+    if (!BerEncodeTag(pByteStrm, tag, pErrCode)) 
+        return FALSE;
+    
+    length = (byte)GetLengthInBytesOfSInt(value);
+    
+    if (!ByteStream_PutByte(pByteStrm, length)) {
+        *pErrCode = ERR_INSUFFICIENT_DATA;
+        return FALSE;
+    }
+
+    v = int2uint(value);
+
+
+    return BerEncodeUInt2(pByteStrm, v, length, pErrCode);
+}
+
+flag BerDecodeInteger(ByteStream* pByteStrm, BerTag tag, void *value, int *pErrCode) {
+
+    int length = 0;
+    int i;
+    asn1SccUint64 ret=0;
+    
+    if (!BerDecodeTag(pByteStrm, tag, pErrCode)) 
+        return FALSE;
+    if (!BerDecodeLength(pByteStrm, &length, pErrCode))
+        return FALSE;
+    
+    for(i=0; i<length; i++) {
+        byte curByte;
+
+        if (!ByteStream_GetByte(pByteStrm, &curByte)) {
+            *pErrCode = ERR_INSUFFICIENT_DATA;
+            return FALSE;
+        }
+        ret <<= 8;
+        ret |= curByte;
+    }
+    
+    if(length == 1) *(uint8_t*)value = (uint8_t)ret;
+    else if(length == 2) *(uint16_t*)value = (uint16_t)ret;
+    else if(length == 4) *(uint32_t*)value = (uint32_t)ret;
+    else *(uint64_t*)value = (uint64_t)ret;
+    //*value = uint2int(ret, length);
+    return TRUE;
 }
 
 flag BerEncodeBoolean(ByteStream* pByteStrm, BerTag tag, flag value, int *pErrCode) {
@@ -353,7 +357,8 @@ flag BerDecodeBoolean(ByteStream* pByteStrm, BerTag tag, flag *value, int *pErrC
 }
 
 flag BerEncodeReal(ByteStream* pByteStrm, BerTag tag, double value, int *pErrCode) {
-    byte buf[100];
+    return BerEncodeInteger(pByteStrm, tag, (uint64_t)value, pErrCode);
+    /*byte buf[100];
     ByteStream tmp;
     byte length;
     int i=0;
@@ -377,12 +382,12 @@ flag BerEncodeReal(ByteStream* pByteStrm, BerTag tag, double value, int *pErrCod
         }
     }
 
-    return TRUE;
-
+    return TRUE;*/
 }
 
 flag BerDecodeReal(ByteStream* pByteStrm, BerTag tag, double *value, int *pErrCode) {
-//  int length=0;
+    return BerDecodeInteger(pByteStrm, tag, value, pErrCode);
+/*//  int length=0;
 //  byte buf[100];
     ByteStream tmp;
 //  int i;
@@ -403,7 +408,7 @@ flag BerDecodeReal(ByteStream* pByteStrm, BerTag tag, double *value, int *pErrCo
 
     pByteStrm->currentByte += (long)ByteStream_GetLength(&tmp);
 
-    return TRUE;
+    return TRUE;*/
          
 }
 
