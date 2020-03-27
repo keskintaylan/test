@@ -79,7 +79,6 @@ typedef unsigned long uint32_t;
 
 typedef float asn1Real32;
 typedef double asn1Real64;
-typedef double asn1Real16;
 
 typedef uint8_t byte;
 
@@ -114,10 +113,10 @@ asn1SccSint uint2int(asn1SccUint v, int uintSizeInBytes);
 
 #if FP_WORD_SIZE==8
 typedef asn1Real64 asn1Real;
-#elif FP_WORD_SIZE==4
-typedef asn1Real32 asn1Real;
+typedef asn1SccUint64 asn1RealHex;
 #else
-typedef asn1Real16 asn1Real;
+typedef asn1Real32 asn1Real;
+typedef asn1SccUint32 asn1RealHex;
 #endif
 
 

@@ -99,7 +99,7 @@ int GetLengthInBytesOfUInt(asn1SccUint64 v)
 	return ret + 4;
 }
 
-static int GetLengthSIntHelper(asn1SccUint v)
+static int GetLengthSIntHelper(asn1SccSint64 v)
 {
 	int ret = 0;
 	asn1SccUint32 v32 = (asn1SccUint32)v;
@@ -119,12 +119,12 @@ static int GetLengthSIntHelper(asn1SccUint v)
 	return ret + 4;
 }
 
-int GetLengthInBytesOfSInt(asn1SccSint v)
+int GetLengthInBytesOfSInt(asn1SccSint64 v)
 {
 	if (v >= 0)
-		return GetLengthSIntHelper((asn1SccUint)v);
+		return GetLengthSIntHelper((asn1SccUint64)v);
 
-	return GetLengthSIntHelper((asn1SccUint)(-v - 1));
+	return GetLengthSIntHelper((asn1SccUint64)(-v - 1));
 }
 
 

@@ -10,8 +10,6 @@
 #include "asn1crt_encoding.h"
 
 //defined in asn1crt.c
-int GetLengthInBytesOfSInt(asn1SccSint v);
-
 
 flag ByteStream_PutByte(ByteStream* pStrm, byte v) 
 {
@@ -278,7 +276,6 @@ flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, uint64_t value, int *pE
 
     v = int2uint(value);
 
-
     return BerEncodeUInt2(pByteStrm, v, length, pErrCode);
 }
 
@@ -356,8 +353,14 @@ flag BerDecodeBoolean(ByteStream* pByteStrm, BerTag tag, flag *value, int *pErrC
     return TRUE;
 }
 
-flag BerEncodeReal(ByteStream* pByteStrm, BerTag tag, double value, int *pErrCode) {
-    return BerEncodeInteger(pByteStrm, tag, (uint64_t)value, pErrCode);
+flag BerEncodeReal(ByteStream* pByteStrm, BerTag tag, asn1Real value, int *pErrCode) {
+    union{
+        asn1Real realVal;
+        asn1RealHex realValHex;
+    }u;
+    
+    u.realVal = value;
+    return BerEncodeInteger(pByteStrm, tag, u.realValHex, pErrCode);
     /*byte buf[100];
     ByteStream tmp;
     byte length;
@@ -385,8 +388,15 @@ flag BerEncodeReal(ByteStream* pByteStrm, BerTag tag, double value, int *pErrCod
     return TRUE;*/
 }
 
-flag BerDecodeReal(ByteStream* pByteStrm, BerTag tag, double *value, int *pErrCode) {
-    return BerDecodeInteger(pByteStrm, tag, value, pErrCode);
+flag BerDecodeReal(ByteStream* pByteStrm, BerTag tag, asn1Real *value, int *pErrCode) {
+    union{
+        asn1Real realVal;
+        asn1RealHex realValHex;
+    }u;
+    
+    flag ret = BerDecodeInteger(pByteStrm, tag, &u.realValHex, pErrCode);
+    *value = u.realVal;
+    return ret;
 /*//  int length=0;
 //  byte buf[100];
     ByteStream tmp;
@@ -453,6 +463,68 @@ flag BerDecodeIA5String(ByteStream* pByteStrm, BerTag tag, char* value, int maxL
 
     return TRUE;
 
+}
+
+#define lenByteStackSize 10
+typedef struct{
+    asn1SccUint buf[lenByteStackSize];
+    uint8_t top;
+}lenByteStack_t; 
+lenByteStack_t lenByteStack;
+
+void LenByteStackInit()
+{
+    lenByteStack.top = 0;
+}
+asn1SccUint LenBytePop()
+{
+    if(lenByteStack.top == 0) return 0;
+    return lenByteStack.buf[--lenByteStack.top];
+}
+bool LenBytePush(asn1SccUint val)
+{
+    if(lenByteStack.top == lenByteStackSize) return false;
+    lenByteStack.buf[lenByteStack.top++] = val;
+    return true;
+}
+
+// pop latestbyte and put length value
+void BerEncodeHeadPop(ByteStream* pByteStrm) {
+    asn1SccUint lenByte = LenBytePop();
+    asn1SccUint len = pByteStrm->currentByte - lenByte - 2; // -2 : lenbyte
+    // put 2byte length value; <length value size must be changed according to WORD_SIZE>
+    pByteStrm->buf[lenByte] = len >> 8;
+    pByteStrm->buf[lenByte+1] = len & 0xFF;
+}
+// push currentbyte
+flag BerEncodeHeadPush(ByteStream* pByteStrm, BerTag tag, int *pErrCode) {
+    if (!BerEncodeTag(pByteStrm, tag, pErrCode)) 
+        return FALSE;
+    
+    ByteStream_PutByte(pByteStrm, 0x82); // 0x82 for 2byte length value
+    LenBytePush(pByteStrm->currentByte);
+    
+    // 2Byte reserve for length value; <reserve byte size must be changed according to WORD_SIZE>
+    ByteStream_PutByte(pByteStrm, 0);
+    if (!ByteStream_PutByte(pByteStrm, 0)) 
+    {
+        *pErrCode = ERR_INSUFFICIENT_DATA;
+        return FALSE;
+    }
+    
+    return TRUE;
+}
+
+flag BerDecodeHead(ByteStream* pByteStrm, BerTag tag, int *pErrCode) {
+    int length=0;
+
+    if (!BerDecodeTag(pByteStrm, tag, pErrCode)) 
+        return FALSE;
+    
+    if (!BerDecodeLength(pByteStrm, &length, pErrCode))
+        return FALSE;
+    
+    return TRUE;
 }
 
 flag BerEncodeNull(ByteStream* pByteStrm, BerTag tag, int *pErrCode) {

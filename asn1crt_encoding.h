@@ -20,7 +20,7 @@ int GetNumberOfBitsForNonNegativeInteger(asn1SccUint v);
 void CalculateMantissaAndExponent(asn1Real d, int* exp, asn1SccUint64* mantissa);
 asn1Real GetDoubleByMantissaAndExp(asn1SccUint mantissa, int exp);
 
-int GetLengthInBytesOfSInt(asn1SccSint v); 
+int GetLengthInBytesOfSInt(asn1SccSint64 v);
 int GetLengthInBytesOfUInt(asn1SccUint64 v);
 
 

@@ -23,19 +23,21 @@ flag Rocket_BER_Encode(const Rocket* pVal, ByteStream* pByteStrm, int* pErrCode)
     BerEncodeInteger(pByteStrm, 0x83, pVal->fuel, pErrCode);
     /* Encode speed */
     if (pVal->exist.speed) {
-        BerEncodeNull(pByteStrm, 0xA4, pErrCode);
+        BerEncodeHeadPush(pByteStrm, 0xA4, pErrCode);
         if(pVal->speed.kind == mph_PRESENT)
             BerEncodeInteger(pByteStrm, 0x80, pVal->speed.u.mph, pErrCode);
         else if(pVal->speed.kind == kmph_PRESENT)
             BerEncodeInteger(pByteStrm, 0x81, pVal->speed.u.kmph, pErrCode);
+        BerEncodeHeadPop(pByteStrm);
     }
     /* Encode payload */
-    BerEncodeNull(pByteStrm, 0xA5, pErrCode);
+    BerEncodeHeadPush(pByteStrm, 0xA5, pErrCode);
     int i1;
     for(i1=0; i1 < pVal->payload.nCount; i1++) 
     {
         BerEncodeIA5String(pByteStrm, 0x16, pVal->payload.arr[i1], strlen(pVal->payload.arr[i1]), pErrCode);
     }
+    BerEncodeHeadPop(pByteStrm);
 
     return ret;
 }
@@ -56,7 +58,7 @@ flag Rocket_BER_Decode(Rocket* pVal, ByteStream* pByteStrm, int* pErrCode)
         /* Decode fuel */
         BerDecodeInteger(pByteStrm, 0x83, (byte*)&pVal->fuel, pErrCode);
         /* Decode speed */
-        if(BerDecodeNull(pByteStrm, 0xA4, pErrCode))
+        if(BerDecodeHead(pByteStrm, 0xA4, pErrCode))
         {
             if(BerDecodeInteger(pByteStrm, 0x80, &pVal->speed.u.mph, pErrCode))
             {
@@ -70,7 +72,7 @@ flag Rocket_BER_Decode(Rocket* pVal, ByteStream* pByteStrm, int* pErrCode)
             }
         }
         /* Decode payload */
-        BerDecodeNull(pByteStrm, 0xA5, pErrCode);
+        BerDecodeHead(pByteStrm, 0xA5, pErrCode);
         int i1;
         for(i1=0; i1 < ARRAY_SIZE(pVal->payload.arr); i1++) 
         {
@@ -127,8 +129,9 @@ flag ArmoryInfo_BER_Encode(const ArmoryInfo* pVal, ByteStream* pByteStrm, int* p
     /* Encode coordinate */
     if(pVal->exist.xcoordinate)
     {
-        BerEncodeNull(pByteStrm, 0xA1, pErrCode);
+        BerEncodeHeadPush(pByteStrm, 0xA1, pErrCode);
         Coordinate_BER_Encode(&pVal->xcoordinate, pByteStrm, pErrCode);
+        BerEncodeHeadPop(pByteStrm);
     }
     
     return ret;
@@ -144,7 +147,7 @@ flag ArmoryInfo_BER_Decode(ArmoryInfo* pVal, ByteStream* pByteStrm, int* pErrCod
     if(ret)
     {
         /* Decode coordinate */
-        if(BerDecodeNull(pByteStrm, 0xA1, pErrCode))
+        if(BerDecodeHead(pByteStrm, 0xA1, pErrCode))
         {
             if(Coordinate_BER_Decode(&pVal->xcoordinate, pByteStrm, pErrCode))
             {
@@ -161,22 +164,30 @@ flag Armory_BER_Encode(const Armory* pVal, ByteStream* pByteStrm, int* pErrCode)
     flag ret = TRUE;
     //BerTag tag;
     
+    LenByteStackInit();
+    BerEncodeHeadPush(pByteStrm, 0x30, pErrCode);
+    
     /* Encode ArmoryInfo */
-    BerEncodeNull(pByteStrm, 0xA0, pErrCode);
+    BerEncodeHeadPush(pByteStrm, 0xA0, pErrCode);
     ArmoryInfo_BER_Encode(&pVal->info, pByteStrm, pErrCode);
+    BerEncodeHeadPop(pByteStrm);
     /* Encode count */
     BerEncodeInteger(pByteStrm, 0x81, pVal->count, pErrCode);
     /* Encode Sequence of Rocket */
     if(pVal->exist.list)
     {
-        BerEncodeNull(pByteStrm, 0xA2, pErrCode);
+        BerEncodeHeadPush(pByteStrm, 0xA2, pErrCode);
         int i1;
         for(i1=0; i1 < sizeof(pVal->list.nCount); i1++) 
         {
+            BerEncodeHeadPush(pByteStrm, 0x30, pErrCode);
             Rocket_BER_Encode(&pVal->list.arr[i1], pByteStrm, pErrCode);
+            BerEncodeHeadPop(pByteStrm);
         }
+        BerEncodeHeadPop(pByteStrm);
     }
     
+    BerEncodeHeadPop(pByteStrm);
     return ret;
 }
 
@@ -184,8 +195,9 @@ flag Armory_BER_Decode(Armory* pVal, ByteStream* pByteStrm, int* pErrCode)
 {
     flag ret = TRUE;
     //BerTag tag;
+    BerDecodeHead(pByteStrm, 0x30, pErrCode);
     
-    ret = BerDecodeNull(pByteStrm, 0xA0, pErrCode);
+    ret = BerDecodeHead(pByteStrm, 0xA0, pErrCode);
     if(ret)
     {
         /* Decode ArmoryInfo */
@@ -193,14 +205,15 @@ flag Armory_BER_Decode(Armory* pVal, ByteStream* pByteStrm, int* pErrCode)
         /* Decode count */
         BerDecodeInteger(pByteStrm, 0x81, &pVal->count, pErrCode);
         /* Decode Sequence of Rocket */
-        if(BerDecodeNull(pByteStrm, 0xA2, pErrCode))
+        if(BerDecodeHead(pByteStrm, 0xA2, pErrCode))
         {
             pVal->exist.list = TRUE;
             int i1;
             for(i1=0; i1 < ARRAY_SIZE(pVal->list.arr); i1++) 
             {
-                if(Rocket_BER_Decode(&pVal->list.arr[i1], pByteStrm, pErrCode))
+                if(BerDecodeHead(pByteStrm, 0x30, pErrCode))
                 {
+                    Rocket_BER_Decode(&pVal->list.arr[i1], pByteStrm, pErrCode);
                     pVal->list.nCount++;
                 }
                 else
