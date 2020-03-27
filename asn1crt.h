@@ -43,11 +43,11 @@ typedef unsigned long uint32_t;
 #endif
 
 #ifndef WORD_SIZE
-#define WORD_SIZE	2
+#define WORD_SIZE	4
 #endif
 
 #ifndef FP_WORD_SIZE
-#define FP_WORD_SIZE	2
+#define FP_WORD_SIZE	4
 #endif
 
 #ifndef PRId16

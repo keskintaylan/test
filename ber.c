@@ -260,7 +260,7 @@ flag BerEncodeByte(ByteStream* pByteStrm, BerTag tag, byte value, int *pErrCode)
     return BerEncodeUInt2(pByteStrm, (asn1SccUint)value, 1, pErrCode);
 }*/
 
-flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, uint64_t value, int *pErrCode) {
+flag BerEncodeInteger(ByteStream* pByteStrm, BerTag tag, asn1SccUint value, int *pErrCode) {
     byte length = 0;
     asn1SccUint v;
 
